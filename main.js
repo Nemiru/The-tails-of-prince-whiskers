@@ -5,6 +5,13 @@ const game = new Phaser.Game({
   width: 770,
   height: 500,
   backgroundColor: '#01171C',
+  physics: {
+    default: 'arcade',
+    arcade: {
+      gravity: { y: 300 },
+      debug: true
+    }
+  },
   scene: {
       preload: preload,
       create: create,
@@ -16,7 +23,7 @@ let idleKnight;
 let cursor;
 
 function preload(){
-  this.load.image('forestBackground', './assets/forestBG.png')
+  this.load.image('forestBackground', '/forestBG.png')
 
   this.load.spritesheet('idle', "/Knight/Meow-Knight_Idle.png", {frameWidth: 16, frameHeight: 16})
   this.load.spritesheet('run', "/Knight/Meow-Knight_Run.png", {frameWidth: 16, frameHeight: 16})
@@ -64,6 +71,7 @@ function create(){
   });
 
 
+  cursor = this.input.keyboard.createCursorKeys() 
 
 }
 
