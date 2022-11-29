@@ -1,26 +1,33 @@
 import Phaser from "phaser";
 
 const game = new Phaser.Game({
-	type: Phaser.AUTO,
-	width: 770,
-	height: 500,
-	backgroundColor: "#01171C",
-	physics: {
-		default: "arcade",
-		arcade: { debug: true },
-	},
-	scene: {
-		preload: preload,
-		create: create,
-		update: update,
-	},
+
+  type: Phaser.AUTO,
+  width: 770,
+  height: 500,
+  backgroundColor: '#01171C',
+  physics: {
+    default: 'arcade',
+    arcade: {
+      gravity: { y: 300 },
+      debug: true
+    }
+  },
+  scene: {
+      preload: preload,
+      create: create,
+      update: update
+  }
+
 });
 
 let idleKnight;
 let cursor;
 
-function preload() {
-	this.load.image("forestBackground", "./assets/forestBG.png");
+
+function preload(){
+  this.load.image('forestBackground', '/forestBG.png')
+
 
 	this.load.spritesheet("idle", "/Knight/Meow-Knight_Idle.png", {
 		frameWidth: 16,
@@ -82,12 +89,16 @@ function create() {
 		repeat: -1,
 	});
 
+
 	this.anims.create({
 		key: "right",
 		frames: this.anims.generateFrameNumbers("run", { start: 1, end: 8 }),
 		frameRate: 10,
 		repeat: -1,
 	});
+
+  cursor = this.input.keyboard.createCursorKeys() 
+
 
 	this.anims.create({
 		key: "idle",
