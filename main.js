@@ -21,7 +21,6 @@ function preload(){
 function create(){
   this.add.image(385, 220, 'forestBackground').setScale(1.2);
   
-
 }
 
 function update(){
