@@ -29,6 +29,11 @@ function preload(){
   this.load.image('forestBackground', '/forestBG.png')
 
 
+function create(){
+  this.add.image(385, 220, 'forestBackground').setScale(1.2);
+  
+
+
 	this.load.spritesheet("idle", "/Knight/Meow-Knight_Idle.png", {
 		frameWidth: 16,
 		frameHeight: 16,
@@ -73,6 +78,7 @@ function preload(){
 	});
 
 	this.load.audio("main-audio", ["zelda-spirit-lullaby.mp3"]);
+
 }
 
 function create() {
