@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 
 // **CONSTANTS**
+let movingMedPlat;
+let movingTinyPlat;
 let idleKnight;
 let cursor;
 let jump;
@@ -9,7 +11,15 @@ let platforms;
 let mainAudio;
 let excalipurr;
 let knightFloor;
-let isRunning, isJumping;
+let sushis;
+var sushi1;
+var sushi2;
+var fish;
+var salmon;
+var shrimp;
+let isRunning = false;
+let isJumping = false;
+let isDodging = false;
 
 // platforms
 let platformLong1;
@@ -22,6 +32,13 @@ function preload() {
 	this.load.image("longTile", "./assets/platforms/bigTile.png");
 	this.load.image("mediumTile", "./assets/platforms/medTile.png");
 	this.load.image("tinyTile", "./assets/platforms/tinyTile.png");
+
+	//Foodz
+	this.load.image("sushi1", "./assets/food/sushi1.png");
+	this.load.image("sushi2", "./assets/food/sushi2.png");
+	this.load.image("salmon", "./assets/food/salmon.png");
+	this.load.image("shrimp", "./assets/food/shrimp.png");
+	this.load.image("fish", "./assets/food/fish.png");
 
 	//Meow Knight
 	// this.load.aseprite({
@@ -98,17 +115,49 @@ function create() {
 	// **PLATFORMS**
 	platforms = this.physics.add.staticGroup();
 	platforms.create(500, 600, "longTile").setScale(5).refreshBody();
-	platforms.create(650, 450, "mediumTile").setScale(1.5).refreshBody();
-	platforms.create(50, 350, "mediumTile");
+	platforms.create(640, 440, "mediumTile").setScale(1.5).refreshBody();
 	platforms.create(500, 350, "tinyTile").setScale(1.5);
 
-	//Testing moving platforms:
+	// **MOVING PLATFORMS**
+	movingMedPlat = this.physics.add
+		.image(200, 300, "mediumTile")
+		.setScale(1.5);
+	movingMedPlat.setImmovable(true);
+	movingMedPlat.body.allowGravity = false;
+	movingMedPlat.setVelocityX(50);
+	this.physics.add.collider(idleKnight, movingMedPlat);
+
+	movingTinyPlat = this.physics.add.image(100, 300, "tinyTile").setScale(1.5);
+	movingTinyPlat.setImmovable(true);
+	movingTinyPlat.body.allowGravity = false;
+	movingTinyPlat.setVelocityY(50);
+	this.physics.add.collider(idleKnight, movingTinyPlat);
+
+	// **FOOD**
+	sushi1 = this.physics.add.image(100, 100, "sushi1").setScale(1.3);
+	sushi2 = this.physics.add.image(250, 200, "sushi2").setScale(1.3);
+	this.physics.add.collider(sushi1, platforms);
+	this.physics.add.collider(sushi1, movingMedPlat);
+	this.physics.add.collider(sushi1, movingTinyPlat);
+
+	this.physics.add.collider(sushi2, platforms);
+	this.physics.add.collider(sushi2, movingMedPlat);
+	this.physics.add.collider(sushi2, movingTinyPlat);
+
+	this.physics.add.overlap(
+		idleKnight,
+		sushi1,
+		sushi2,
+		collectSushi,
+		null,
+		this
+	);
 
 	// **COLLIDERS**
 	this.physics.add.collider(idleKnight, platforms);
 
 	// **CAMERA**
-	this.cameras.main.startFollow(this.idleKnight);
+	//this.cameras.main.startFollow(this.idleKnight);
 
 	// **ANIMATIONS**
 	//this.anims.createFromAseprite("meow-knight");
@@ -141,7 +190,7 @@ function create() {
 	this.anims.create({
 		key: "jumpStart",
 		frames: this.anims.generateFrameNumbers("jump", { start: 0, end: 2 }),
-		frameRate: 4,
+		frameRate: 12,
 	});
 	//jumpFinish
 	this.anims.create({
@@ -200,13 +249,13 @@ function create() {
 }
 
 function update() {
+	const knightAnim = idleKnight.anims.getName();
+	const knightFloor = idleKnight.body.onFloor();
 	// functions
-	const onFloor = idleKnight.body.touching.down;
 	function move(character, direction) {
 		isRunning = true;
-		const floor = character.body.touching.down;
 		if (direction === "left") {
-			//console.log(floor);
+			isRunning = true;
 			if (!isJumping) {
 				character.anims.play("left", true);
 			}
@@ -220,74 +269,107 @@ function update() {
 			character.flipX = false;
 		}
 	}
-	function jumpStart() {
-		//console.log(onFloor);
+	function jump() {
 		isJumping = true;
-		idleKnight.anims.play("jumpStart");
-		idleKnight.on("animationcomplete", () => {
-			console.log("jump");
-		});
-	}
-	function jumpFinish() {
-		isJumping = true;
-		idleKnight.anims.play("jumpFinish");
-		idleKnight.setVelocityY(-260);
+		idleKnight.anims.play("jumpStart", true);
+		if (knightAnim === "jumpStart") {
+			idleKnight.on("animationcomplete", () => {
+				idleKnight.anims.play("jumpFinish", true);
+				idleKnight.setVelocityY(-260);
+				if (cursor.left.isDown || cursor.A.isDown) {
+					idleKnight.setVelocityX(-120);
+					idleKnight.flipX = true;
+				} else if (cursor.right.isDown || cursor.D.isDown) {
+					idleKnight.setVelocityX(120);
+					idleKnight.flipX = false;
+				}
+				idleKnight.on("animationcomplete", () => {
+					if (isJumping) {
+						isJumping = false;
+					}
+				});
+			});
+		} else {
+			idleKnight.anims.play("jumpFinish", true);
+			idleKnight.setVelocityY(-280);
+			if (cursor.left.isDown || cursor.A.isDown) {
+				idleKnight.setVelocityX(-120);
+				idleKnight.flipX = true;
+			} else if (cursor.right.isDown || cursor.D.isDown) {
+				idleKnight.setVelocityX(120);
+				idleKnight.flipX = false;
+			}
+			if (knightAnim === "jumpFinish") {
+				idleKnight.on("animationcomplete", () => {
+					isJumping = false;
+				});
+			} else {
+				isJumping = false;
+			}
+		}
 	}
 	function dodge() {
-		console.log("dodge");
-		idleKnight.anims.play("dodge", true);
+		isDodging = true;
+		isRunning = false;
+		if (!isJumping) {
+			idleKnight.anims.play("dodge", true);
+		}
+
 		idleKnight.body.velocityX *= 2;
+		idleKnight.on("animationcomplete", () => {
+			isDodging = false;
+			isRunning = true;
+			idleKnight.body.velocityX *= 0.5;
+		});
 	}
 
-	// **JUMP**
+	// // **JUMP**
+	// this.input.keyboard.on("keydown-W", jump);
+	// this.input.keyboard.on("keydown-up", jump);
 
-	// on jump key press, start animation jumpStart
-	this.input.keyboard.on("keydown-W", jumpStart);
-	this.input.keyboard.on("keydown-up", jumpStart);
-	// // on jump key release, start animation jumpFinish
-	// this.input.keyboard.on("keyup-W", jumpFinish);
-	// this.input.keyboard.on("keyup-up", jumpFinish);
-
-	// **DODGE**
-	// if (cursor.down.isDown || cursor.S.isDown) {w
-	// 	idleKnight.anims.startAnimation("dodge");
-	// 	idleKnight.setAccelerationX(20);
-	// }
-
-	// **MOVE**
-	if (!isJumping) {
-		if (cursor.left.isDown || cursor.A.isDown) {
-			move(idleKnight, "left");
-			this.input.keyboard.on("keydown-D", dodge);
-			this.input.keyboard.on("keydown-down", dodge);
-
-			// if (cursor.down.isDown || cursor.S.isDown) {
-			// 	idleKnight.anims.play("dodge", true);
-			// 	idleKnight.setVelocityX(-300);
-			// }
-			// idleKnight.setVelocityX(-120);
-			// idleKnight.flipX = true;
-			// idleKnight.anims.play("left", true);
-		} else if (cursor.right.isDown || cursor.D.isDown) {
-			move(idleKnight, "right");
-			this.input.keyboard.on("keydown-D", dodge);
-			this.input.keyboard.on("keydown-down", dodge);
-
-			// if (cursor.down.isDown || cursor.S.isDown) {
-			// 	idleKnight.anims.play("dodge", true);
-			// 	idleKnight.setVelocityX(300);
-			// }
-			// idleKnight.flipX = false;
-			// idleKnight.setVelocityX(120);
-			// idleKnight.anims.play("right", true);
-		} else {
-			idleKnight.setVelocityX(0);
+	if ((cursor.up.isDown && knightFloor) || (cursor.W.isDown && knightFloor)) {
+		jump();
+		// **MOVE LEFT**
+	} else if (cursor.left.isDown || cursor.A.isDown) {
+		move(idleKnight, "left");
+		// **DODGE LEFT**
+		if (cursor.down.isDown || cursor.S.isDown) {
+			dodge();
+		}
+		// **MOVE RIGHT**
+	} else if (cursor.right.isDown || cursor.D.isDown) {
+		move(idleKnight, "right");
+		// **DODGE RIGHT**
+		if (cursor.down.isDown || cursor.S.isDown) {
+			dodge();
+		}
+		// **IDLE**
+	} else {
+		isRunning = false;
+		idleKnight.setVelocityX(0);
+		if (!isJumping) {
 			idleKnight.anims.play("idle", true);
 		}
 	}
 
 	//if(excalipurr=true in attack4)
 	//if(excalipurr && !audio.isPlaying) {play meow audio}
+	if (movingMedPlat.x >= 400) {
+		movingMedPlat.setVelocityX(-50);
+	} else if (movingMedPlat.x <= 200) {
+		movingMedPlat.setVelocityX(50);
+	}
+
+	if (movingTinyPlat.y >= 300) {
+		movingTinyPlat.setVelocityY(-50);
+	} else if (movingTinyPlat.y <= 100) {
+		movingTinyPlat.setVelocityY(50);
+	}
+}
+
+function collectSushi(idleKnight, sushi1, sushi2) {
+	sushi1.disableBody(true, true, true);
+	sushi2.disableBody(true, true, true);
 }
 
 const game = new Phaser.Game({
