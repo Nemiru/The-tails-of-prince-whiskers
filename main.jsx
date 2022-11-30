@@ -92,6 +92,7 @@ function preload() {
 
 	//audio
 	this.load.audio("main-audio", "./assets/music/zelda-spirit-lullaby.mp3");
+	this.load.audio("excalipurr", "./assets/music/ultimate-meow.mp3");
 }
 
 function create() {
@@ -102,20 +103,16 @@ function create() {
 	//jump = this.input.keyboard.addKeys("W, up");
 
 	// **BACKGROUND**
-	this.add.image(385, 220, "forestBackground").setScale(1.3);
+	this.add.image(385, 230, "forestBackground").setScale(1.3);
 
-	// **CAMERA**
-
-	this.cameras.main.startFollow(this.idleKnight);
-	const cam1 = (// **MOVING BACKGROUND**
-	this.forestBackground = game.add.tileSprite(
-		0,
-		0,
-		game.stage.bounds.width,
-		game.cache.getImage("forestBackground").height,
-		"forestBackground"
-	));
-	console.log("create", forestBackground);
+	// **MOVING BACKGROUND**
+	// this.forestBackground = this.add.tileSprite(
+	// 	385,
+	// 	250,
+	// 	"forestBackground".width,
+	// 	"forestBackground".height,
+	// 	"forestBackground"
+	// );
 
 	// **AUDIO**
 	mainAudio = this.sound.add("main-audio");
@@ -123,12 +120,18 @@ function create() {
 
 	// **CHARACTERS**
 	// **KNIGHT**
-	idleKnight = this.physics.add.sprite(300, 300, "idle").setScale(3);
+	idleKnight = this.physics.add.sprite(385, 250, "idle").setScale(3);
 	idleKnight.body.setSize(16, 16);
 	idleKnight.setBounce(0.1);
 	idleKnight.setCollideWorldBounds(true);
 
 	// **ENEMY**
+
+	// **CAMERA**
+	//this.cameras.main.setViewport(770, 500, -385, -250);
+	//const cam1 = this.cameras.add(770, 500);
+	//this.cameras.main.startFollow(idleKnight);
+	//cam1.startFollow(idleKnight);
 
 	// **PLATFORMS**
 	platforms = this.physics.add.staticGroup();
@@ -270,7 +273,7 @@ function update() {
 	// functions
 	function move(character, direction) {
 		isRunning = true;
-		if (!isJumping) {
+		if (!isJumping && !isDodging) {
 			character.anims.play("run", true);
 		}
 		if (direction === "left") {
@@ -324,31 +327,30 @@ function update() {
 		idleKnight.anims.stop();
 		idleKnight.anims.play("dodge", true);
 
-		idleKnight.body.velocityX = knightVel * 2;
+		idleKnight.setVelocityX(knightVel * 2);
 		idleKnight.on("animationcomplete", () => {
 			isDodging = false;
-			idleKnight.body.velocityX = knightVel * 0.5;
+			idleKnight.setVelocityX(knightVel * 0.5);
 		});
 	}
 
 	if ((cursor.up.isDown || cursor.W.isDown) && knightFloor) {
 		checkJump();
-		// **DODGE**
-	} else if (cursor.down.isDown || cursor.S.isDown) {
-		dodge();
 		// **MOVE LEFT**
 	} else if (cursor.left.isDown || cursor.A.isDown) {
 		move(idleKnight, "left");
 		// **DODGE LEFT**
+		this.input.keyboard.on("keydown-S", dodge);
+		this.input.keyboard.on("keydown-down", dodge);
 		// if (cursor.down.isDown || cursor.S.isDown) {
-		// 	isDodging = true;
-		// 	idleKnight.anims.stop();
-		// 	idleKnight.anims.play("dodge", true);
+		// 	dodge();
 		// }
 		// **MOVE RIGHT**
 	} else if (cursor.right.isDown || cursor.D.isDown) {
 		move(idleKnight, "right");
-		// // **DODGE RIGHT**
+		// **DODGE RIGHT**
+		this.input.keyboard.on("keydown-S", dodge);
+		this.input.keyboard.on("keydown-down", dodge);
 		// if (cursor.down.isDown || cursor.S.isDown) {
 		// 	dodge();
 		// }
@@ -363,6 +365,7 @@ function update() {
 
 	//if(excalipurr=true in attack4)
 	//if(excalipurr && !audio.isPlaying) {play meow audio}
+
 	if (movingMedPlat.x >= 400) {
 		movingMedPlat.setVelocityX(-50);
 	} else if (movingMedPlat.x <= 200) {
@@ -385,7 +388,7 @@ function collectSushi(idleKnight, sushis) {
 // moving onto next page?
 
 console.log("update", forestBackground);
-//forestBackground.tilePositionX -= 1;
+//forestBackground.tilePositionX += 1;
 
 const game = new Phaser.Game({
 	type: Phaser.AUTO,
