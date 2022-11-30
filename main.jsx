@@ -1,6 +1,9 @@
 import Phaser from "phaser";
 
 // **CONSTANTS**
+var score = 0;
+var scoreText;
+var forestBackground;
 let movingMedPlat;
 let movingTinyPlat;
 let idleKnight;
@@ -101,6 +104,19 @@ function create() {
 	// **BACKGROUND**
 	this.add.image(385, 220, "forestBackground").setScale(1.3);
 
+	// **CAMERA**
+
+	this.cameras.main.startFollow(this.idleKnight);
+	const cam1 = (// **MOVING BACKGROUND**
+	this.forestBackground = game.add.tileSprite(
+		0,
+		0,
+		game.stage.bounds.width,
+		game.cache.getImage("forestBackground").height,
+		"forestBackground"
+	));
+	console.log("create", forestBackground);
+
 	// **AUDIO**
 	mainAudio = this.sound.add("main-audio");
 	mainAudio.play({ volume: 0.1, rate: 0.6, detune: 10, loop: true });
@@ -112,11 +128,13 @@ function create() {
 	idleKnight.setBounce(0.1);
 	idleKnight.setCollideWorldBounds(true);
 
+	// **ENEMY**
+
 	// **PLATFORMS**
 	platforms = this.physics.add.staticGroup();
 	platforms.create(500, 600, "longTile").setScale(5).refreshBody();
-	platforms.create(640, 440, "mediumTile").setScale(1.5).refreshBody();
-	platforms.create(500, 350, "tinyTile").setScale(1.5);
+	platforms.create(650, 430, "mediumTile").setScale(1.5).refreshBody();
+	platforms.create(500, 350, "tinyTile").setScale(1.3);
 
 	// **MOVING PLATFORMS**
 	movingMedPlat = this.physics.add
@@ -134,45 +152,41 @@ function create() {
 	this.physics.add.collider(idleKnight, movingTinyPlat);
 
 	// **FOOD**
-	sushi1 = this.physics.add.image(100, 100, "sushi1").setScale(1.3);
-	sushi2 = this.physics.add.image(250, 200, "sushi2").setScale(1.3);
-	this.physics.add.collider(sushi1, platforms);
-	this.physics.add.collider(sushi1, movingMedPlat);
-	this.physics.add.collider(sushi1, movingTinyPlat);
+	sushis = this.physics.add.group({
+		key: "sushi1",
+		repeat: 1,
+		setXY: { x: 100, y: 100, stepX: 120 },
+		setScale: { x: 1.5, y: 1.5 },
+	});
+	this.physics.add.overlap(idleKnight, sushis, collectSushi, null, this);
+	this.physics.add.collider(sushis, platforms);
+	this.physics.add.collider(sushis, movingMedPlat);
+	this.physics.add.collider(sushis, movingTinyPlat);
 
-	this.physics.add.collider(sushi2, platforms);
-	this.physics.add.collider(sushi2, movingMedPlat);
-	this.physics.add.collider(sushi2, movingTinyPlat);
+	// **SCORE SET-UP**
 
-	this.physics.add.overlap(
-		idleKnight,
-		sushi1,
-		sushi2,
-		collectSushi,
-		null,
-		this
-	);
+	scoreText = this.add.text(16, 16, "Food collected: 0", {
+		fontSize: "16px",
+		fill: "#FFF",
+	});
 
 	// **COLLIDERS**
 	this.physics.add.collider(idleKnight, platforms);
 
-	// **CAMERA**
-	//this.cameras.main.startFollow(this.idleKnight);
-
 	// **ANIMATIONS**
 	//this.anims.createFromAseprite("meow-knight");
-	//left
+	//run
 	this.anims.create({
-		key: "left",
+		key: "run",
 		frames: this.anims.generateFrameNumbers("run"),
 		frameRate: 4,
 	});
-	//right
-	this.anims.create({
-		key: "right",
-		frames: this.anims.generateFrameNumbers("run"),
-		frameRate: 4,
-	});
+	// //right
+	// this.anims.create({
+	// 	key: "right",
+	// 	frames: this.anims.generateFrameNumbers("run"),
+	// 	frameRate: 4,
+	// });
 	//idle
 	this.anims.create({
 		key: "idle",
@@ -196,7 +210,7 @@ function create() {
 	this.anims.create({
 		key: "jumpFinish",
 		frames: this.anims.generateFrameNumbers("jump", { start: 3 }),
-		frameRate: 4,
+		frameRate: 8,
 	});
 	//dodge
 	this.anims.create({
@@ -251,47 +265,46 @@ function create() {
 function update() {
 	const knightAnim = idleKnight.anims.getName();
 	const knightFloor = idleKnight.body.onFloor();
+	const knightVel = idleKnight.body.velocityX;
+	const jumpVelocity = -245;
 	// functions
 	function move(character, direction) {
 		isRunning = true;
+		if (!isJumping) {
+			character.anims.play("run", true);
+		}
 		if (direction === "left") {
-			isRunning = true;
-			if (!isJumping) {
-				character.anims.play("left", true);
-			}
 			character.setVelocityX(-120);
 			character.flipX = true;
 		} else if (direction === "right") {
-			if (!isJumping) {
-				character.anims.play("right", true);
-			}
 			character.setVelocityX(120);
 			character.flipX = false;
 		}
 	}
-	function jump() {
+	function checkJump() {
 		isJumping = true;
+		idleKnight.anims.stop();
 		idleKnight.anims.play("jumpStart", true);
 		if (knightAnim === "jumpStart") {
 			idleKnight.on("animationcomplete", () => {
-				idleKnight.anims.play("jumpFinish", true);
-				idleKnight.setVelocityY(-260);
-				if (cursor.left.isDown || cursor.A.isDown) {
-					idleKnight.setVelocityX(-120);
-					idleKnight.flipX = true;
-				} else if (cursor.right.isDown || cursor.D.isDown) {
-					idleKnight.setVelocityX(120);
-					idleKnight.flipX = false;
+				idleKnight.anims.play("jumpFinish");
+				if (knightAnim === "jumpFinish") {
+					jump();
+				} else {
+					idleKnight.anims.stop();
+					idleKnight.anims.play("jumpFinish");
+					jump();
 				}
-				idleKnight.on("animationcomplete", () => {
-					if (isJumping) {
-						isJumping = false;
-					}
-				});
 			});
 		} else {
-			idleKnight.anims.play("jumpFinish", true);
-			idleKnight.setVelocityY(-280);
+			idleKnight.anims.stop();
+			idleKnight.anims.play("jumpFinish");
+			jump();
+		}
+	}
+	function jump() {
+		if (knightAnim === "jumpFinish") {
+			idleKnight.setVelocityY(jumpVelocity);
 			if (cursor.left.isDown || cursor.A.isDown) {
 				idleKnight.setVelocityX(-120);
 				idleKnight.flipX = true;
@@ -299,50 +312,46 @@ function update() {
 				idleKnight.setVelocityX(120);
 				idleKnight.flipX = false;
 			}
-			if (knightAnim === "jumpFinish") {
-				idleKnight.on("animationcomplete", () => {
-					isJumping = false;
-				});
-			} else {
+			idleKnight.on("animationcomplete", () => {
 				isJumping = false;
-			}
+			});
+		} else {
+			isJumping = false;
 		}
 	}
 	function dodge() {
 		isDodging = true;
-		isRunning = false;
-		if (!isJumping) {
-			idleKnight.anims.play("dodge", true);
-		}
+		idleKnight.anims.stop();
+		idleKnight.anims.play("dodge", true);
 
-		idleKnight.body.velocityX *= 2;
+		idleKnight.body.velocityX = knightVel * 2;
 		idleKnight.on("animationcomplete", () => {
 			isDodging = false;
-			isRunning = true;
-			idleKnight.body.velocityX *= 0.5;
+			idleKnight.body.velocityX = knightVel * 0.5;
 		});
 	}
 
-	// // **JUMP**
-	// this.input.keyboard.on("keydown-W", jump);
-	// this.input.keyboard.on("keydown-up", jump);
-
-	if ((cursor.up.isDown && knightFloor) || (cursor.W.isDown && knightFloor)) {
-		jump();
+	if ((cursor.up.isDown || cursor.W.isDown) && knightFloor) {
+		checkJump();
+		// **DODGE**
+	} else if (cursor.down.isDown || cursor.S.isDown) {
+		dodge();
 		// **MOVE LEFT**
 	} else if (cursor.left.isDown || cursor.A.isDown) {
 		move(idleKnight, "left");
 		// **DODGE LEFT**
-		if (cursor.down.isDown || cursor.S.isDown) {
-			dodge();
-		}
+		// if (cursor.down.isDown || cursor.S.isDown) {
+		// 	isDodging = true;
+		// 	idleKnight.anims.stop();
+		// 	idleKnight.anims.play("dodge", true);
+		// }
 		// **MOVE RIGHT**
 	} else if (cursor.right.isDown || cursor.D.isDown) {
 		move(idleKnight, "right");
-		// **DODGE RIGHT**
-		if (cursor.down.isDown || cursor.S.isDown) {
-			dodge();
-		}
+		// // **DODGE RIGHT**
+		// if (cursor.down.isDown || cursor.S.isDown) {
+		// 	dodge();
+		// }
 		// **IDLE**
 	} else {
 		isRunning = false;
@@ -367,10 +376,16 @@ function update() {
 	}
 }
 
-function collectSushi(idleKnight, sushi1, sushi2) {
-	sushi1.disableBody(true, true, true);
-	sushi2.disableBody(true, true, true);
+function collectSushi(idleKnight, sushis) {
+	sushis.disableBody(true, true);
+	score += 1;
+	scoreText.setText("Food collected: " + score);
 }
+
+// moving onto next page?
+
+console.log("update", forestBackground);
+//forestBackground.tilePositionX -= 1;
 
 const game = new Phaser.Game({
 	type: Phaser.AUTO,
