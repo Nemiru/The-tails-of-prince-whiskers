@@ -1,10 +1,10 @@
 import Phaser from "phaser";
-import StartMenu from "./startmenu.js";
+import StartMenu from "./StartMenu.js";
 import Main from "./Main.js";
-import Level1 from "./level1.js";
-import Level2 from "./level2.js";
+import Level1 from "./Level1.js";
+import Level2 from "./Level2.js";
 
-const game = new Phaser.Game({
+const config = {
 	type: Phaser.AUTO,
 	width: 770,
 	height: 500,
@@ -20,6 +20,8 @@ const game = new Phaser.Game({
 	render: {
 		pixelArt: true,
 	},
-});
+};
+
+const game = new Phaser.Game(config);
 
 export default game;

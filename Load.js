@@ -1,8 +1,8 @@
 import Phaser from "phaser";
 
-class Level2 extends Phaser.Scene {
+class Loading extends Phaser.Scene {
 	constructor() {
-		super("Level2");
+		super("Loading");
 	}
 
 	init(data) {
@@ -16,4 +16,4 @@ class Level2 extends Phaser.Scene {
 	update(time, delta) {}
 }
 
-export default Level2;
+export default Loading;

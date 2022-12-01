@@ -71,8 +71,4 @@ export function attack4() {
 	});
 }
 
-export function collectSushi(idleKnight, sushis) {
-	sushis.disableBody(true, true);
-	score += 1;
-	scoreText.setText("Food collected: " + score);
-}
+
