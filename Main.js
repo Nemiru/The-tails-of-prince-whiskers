@@ -151,7 +151,7 @@ class Main extends Phaser.Scene {
 		idleKnight.setCollideWorldBounds(true);
 
 		// **ENEMY**
-		enemyDog = this.physics.add.sprite(100, 430, "dog-idle").setScale(3);
+		enemyDog = this.physics.add.sprite(100, 430, "dog-idle").setScale(2.5);
 		enemyDog.setSize(48, 32);
 		enemyDog.setCollideWorldBounds(true);
 
@@ -208,12 +208,12 @@ class Main extends Phaser.Scene {
 
 		// **ANIMATIONS**
 		//this.anims.createFromAseprite("meow-knight");
-		//left
+		//run
 		this.anims.create({
 			key: "run",
 			frames: this.anims.generateFrameNumbers("run"),
 			frameRate: 8,
-			repeat: -1,
+			//repeat: -1,
 		});
 		// //right
 		// this.anims.create({
@@ -402,10 +402,10 @@ class Main extends Phaser.Scene {
 			// **IDLE**
 		} else {
 			isRunning = false;
-			idleKnight.anims.stop();
-			idleKnight.anims.play("idle", true);
 			idleKnight.setVelocityX(0);
-			if (knightAnim !== "idle") {
+			if (knightAnim === "run" || !knightAnim) {
+				idleKnight.anims.play("idle", true);
+			} else {
 				idleKnight.on("animationcomplete", () => {
 					idleKnight.anims.play("idle", true);
 				});
@@ -499,12 +499,11 @@ function collectSushi(idleKnight, sushis) {
 	sushis.disableBody(true, true);
 	score += 1;
 	if (score === 2) {
-		setTimeout(() => {
-			this.scene.start("Level1");
-		}, 4000);
-	} else {
-		return scoreText.setText("Food collected: " + score);
+		// setTimeout(() => {
+		// 	this.scene.start("Level1");
+		// }, 4000);
 	}
+	return scoreText.setText("Food collected: " + score);
 }
 // moving onto next page?
 

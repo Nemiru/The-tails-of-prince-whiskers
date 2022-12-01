@@ -35,15 +35,15 @@ class StartMenu extends Phaser.Scene {
 			hoverSushi.setVisible(true);
 			hoverSushi.x = playButton.x - 100;
 			hoverSushi.y = playButton.y;
-			console.log("hovaering");
+			//console.log("hovaering");
 		});
 		playButton.on("pointerout", () => {
 			hoverSushi.setVisible(false);
-			console.log("No more ohver");
+			//console.log("No more ohver");
 		});
 		playButton.on("pointerup", () => {
 			this.scene.start("Main");
-			console.log("WHISKERSSSSSSSSSSSS");
+			//console.log("WHISKERSSSSSSSSSSSS");
 		});
 
 		//** FOOTER TEXT */
