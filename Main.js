@@ -244,7 +244,7 @@ class Main extends Phaser.Scene {
 			eventsCenter.emit("update-score", this.score);
 		});
 
-		let shrimp1 = this.physics.add.image(-190, 100, "shrimp").setScale(1.5);
+		let shrimp1 = this.physics.add.image(-220, 100, "shrimp").setScale(1.5);
 		this.physics.add.collider(shrimp1, platforms);
 		this.physics.add.collider(idleKnight, shrimp1, () => {
 			shrimp1.destroy();
