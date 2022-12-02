@@ -1,8 +1,8 @@
 import Phaser from "phaser";
 import StartMenu from "./StartMenu.js";
 import Main from "./Main.js";
-import Level1 from "./Level1.js";
-import Level2 from "./Level2.js";
+//import Level1 from "./Level1.js";
+import Score from "./Score.js";
 
 const config = {
 	type: Phaser.AUTO,
@@ -13,10 +13,10 @@ const config = {
 		default: "arcade",
 		arcade: {
 			gravity: { y: 300 },
-			debug: true,
+			debug: false,
 		},
 	},
-	scene: [StartMenu, Main, Level1, Level2],
+	scene: [StartMenu, Main, Score],
 	render: {
 		pixelArt: true,
 	},

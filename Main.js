@@ -1,13 +1,18 @@
 import Phaser from "phaser";
+import eventsCenter from "./EventsCenter.js";
 
 // **CONSTANTS**
-var score = 0;
+//var score = 0;
 var scoreText;
 var forestBackground;
 let movingMedPlat;
 let movingTinyPlat;
 let idleKnight, enemyDog;
 let cursor;
+let shop;
+let lamp;
+let sign;
+let fence;
 let platforms;
 let mainAudio;
 let excalipurr;
@@ -43,16 +48,16 @@ class Main extends Phaser.Scene {
 		);
 
 		//platforms
-		this.load.image("longTile", "./assets/platforms/bigTile.png");
+		this.load.image("bigTile", "./assets/platforms/bigTile.png");
 		this.load.image("mediumTile", "./assets/platforms/medTile.png");
 		this.load.image("tinyTile", "./assets/platforms/tinyTile.png");
 
 		//Foodz
 		this.load.image("sushi1", "./assets/food/sushi1.png");
-		// this.load.image("sushi2", "./assets/food/sushi2.png");
-		// this.load.image("salmon", "./assets/food/salmon.png");
-		// this.load.image("shrimp", "./assets/food/shrimp.png");
-		// this.load.image("fish", "./assets/food/fish.png");
+		this.load.image("sushi2", "./assets/food/sushi2.png");
+		this.load.image("salmon", "./assets/food/salmon.png");
+		this.load.image("shrimp", "./assets/food/shrimp.png");
+		this.load.image("fish", "./assets/food/fish.png");
 
 		//Meow Knight
 		// this.load.aseprite({
@@ -103,14 +108,23 @@ class Main extends Phaser.Scene {
 		});
 
 		// **ENEMY**
-		this.load.spritesheet("dog-idle", "./assets/enemy/Dog-Idle.png", {
-			frameWidth: 64,
-			frameHeight: 32,
+		// this.load.spritesheet("dog-idle", "./assets/enemy/Dog-Idle.png", {
+		// 	frameWidth: 64,
+		// 	frameHeight: 32,
+		// });
+		// this.load.spritesheet("dog-run", "./assets/enemy/Dog-Run.png", {
+		// 	frameWidth: 64,
+		// 	frameHeight: 32,
+		// });
+
+		//DECORATIONS
+		this.load.spritesheet("shop", "./assets/decorations/shop_anim.png", {
+			frameWidth: 118,
+			frameHeight: 118,
 		});
-		this.load.spritesheet("dog-run", "./assets/enemy/Dog-Run.png", {
-			frameWidth: 64,
-			frameHeight: 32,
-		});
+		this.load.image("lamp", "./assets/decorations/lamp.png");
+		this.load.image("fence", "./assets/decorations/fence_1.png");
+		this.load.image("sign", "./assets/decorations/sign.png");
 
 		//audio
 		this.load.audio(
@@ -133,15 +147,23 @@ class Main extends Phaser.Scene {
 		this.forestBackground = this.add.tileSprite(
 			385,
 			250,
-			"forestBackground".width,
-			"forestBackground".height,
+			2695,
+			500,
 			"forestBackground"
 		);
+		this.forestBackground.fixedToCamera = true;
+
+		// **WORLD BOUNDS**
+		this.physics.world.setBounds(-800, 0, 1540, 500);
 
 		// **AUDIO**
 		mainAudio = this.sound.add("main-audio");
 		excalipurr = this.sound.add("excalipurr");
 		mainAudio.play({ volume: 0.1, rate: 0.6, detune: 10, loop: true });
+
+		// **SCORE
+		this.score = 0;
+		this.scene.launch("Score");
 
 		// **CHARACTERS**
 		// **KNIGHT**
@@ -151,21 +173,32 @@ class Main extends Phaser.Scene {
 		idleKnight.setCollideWorldBounds(true);
 
 		// **ENEMY**
-		enemyDog = this.physics.add.sprite(100, 430, "dog-idle").setScale(2.5);
-		enemyDog.setSize(48, 32);
-		enemyDog.setCollideWorldBounds(true);
+		// enemyDog = this.physics.add.sprite(100, 430, "dog-idle").setScale(2.5);
+		// enemyDog.setSize(48, 32);
+		// enemyDog.setCollideWorldBounds(true);
 
 		// **CAMERA**
-		this.cameras.main.setViewport(770, 500, -385, -250);
+		this.cameras.main
+			.setViewport(770, 500, -385, -250)
+			.setBounds(
+				0,
+				500,
+				this.forestBackground.width,
+				this.forestBackground.height
+			);
+
 		//const cam1 = this.cameras.add(770, 500);
-		this.cameras.main.startFollow(idleKnight);
+		this.cameras.main.startFollow(idleKnight, true, 1, 0);
 		//cam1.startFollow(idleKnight);
 
 		// **PLATFORMS**
 		platforms = this.physics.add.staticGroup();
 		// platforms.create(500, 600, "longTile").setScale(5).refreshBody();
-		platforms.create(650, 430, "mediumTile").setScale(1.5).refreshBody();
-		platforms.create(500, 350, "tinyTile").setScale(1.3);
+		platforms.create(650, 440, "mediumTile").setScale(1.5).refreshBody();
+		platforms.create(500, 350, "tinyTile").setScale(1.5).refreshBody();
+		platforms.create(-50, 300, "mediumTile").setScale(1.5).refreshBody();
+		platforms.create(-250, 250, "bigTile").setScale(1.5).refreshBody();
+		platforms.create(-420, 350, "tinyTile").setScale(1.5).refreshBody();
 
 		// **MOVING PLATFORMS**
 		movingMedPlat = this.physics.add
@@ -185,23 +218,96 @@ class Main extends Phaser.Scene {
 		this.physics.add.collider(idleKnight, movingTinyPlat);
 
 		// **FOOD**
-		sushis = this.physics.add.group({
-			key: "sushi1",
-			repeat: 1,
-			setXY: { x: 100, y: 100, stepX: 120 },
-			setScale: { x: 1.5, y: 1.5 },
+		// sushis = this.physics.add.group({
+		// 	key: "sushi1",
+		// 	repeat: 2,
+		// 	setXY: { x: 100, y: 100, stepX: 120 },
+		// 	setScale: { x: 1.5, y: 1.5 },
+		// });
+
+		// this.physics.add.overlap(idleKnight, sushis, collectSushi);
+		// this.physics.add.collider(sushis, platforms);
+		// this.physics.add.collider(sushis, movingMedPlat);
+		// this.physics.add.collider(sushis, movingTinyPlat);
+
+		// function collectSushi(idleKnight, sushis) {
+		// 	sushis.disableBody(true, true);
+		// 	++this.score;
+		// 	eventsCenter.emit("update-score", this.score);
+		// }
+
+		let fish1 = this.physics.add.image(-420, 300, "fish").setScale(1.5);
+		this.physics.add.collider(fish1, platforms);
+		this.physics.add.collider(idleKnight, fish1, () => {
+			fish1.destroy();
+			++this.score;
+			eventsCenter.emit("update-score", this.score);
 		});
-		this.physics.add.overlap(idleKnight, sushis, collectSushi, null, this);
-		this.physics.add.collider(sushis, platforms);
-		this.physics.add.collider(sushis, movingMedPlat);
-		this.physics.add.collider(sushis, movingTinyPlat);
+
+		let shrimp1 = this.physics.add.image(-190, 100, "shrimp").setScale(1.5);
+		this.physics.add.collider(shrimp1, platforms);
+		this.physics.add.collider(idleKnight, shrimp1, () => {
+			shrimp1.destroy();
+			++this.score;
+			eventsCenter.emit("update-score", this.score);
+		});
+
+		let salmon1 = this.physics.add.image(220, 100, "salmon").setScale(1.5);
+		this.physics.add.collider(salmon1, movingMedPlat);
+		this.physics.add.collider(idleKnight, salmon1, () => {
+			salmon1.destroy();
+			++this.score;
+			eventsCenter.emit("update-score", this.score);
+		});
+
+		sushi2 = this.physics.add.image(500, 300, "sushi2").setScale(1.5);
+		this.physics.add.collider(sushi2, platforms);
+		this.physics.add.collider(idleKnight, sushi2, () => {
+			sushi2.destroy();
+			++this.score;
+			eventsCenter.emit("update-score", this.score);
+		});
+
+		let blkSushi1 = this.physics.add
+			.image(100, 100, "sushi1")
+			.setScale(1.5);
+		this.physics.add.collider(blkSushi1, movingTinyPlat);
+		this.physics.add.collider(idleKnight, blkSushi1, () => {
+			blkSushi1.destroy();
+			++this.score;
+			eventsCenter.emit("update-score", this.score);
+		});
+
+		// **SHOP**
+		shop = this.physics.add
+			.sprite(-650, 365, "shop")
+			.setScale(2.2)
+			.setDepth(0);
+		shop.setImmovable(true);
+		shop.body.allowGravity = false;
+		//shop.bringTotop(idleKnight);
+		//idleKnight.bringTotop(shop);
+		this.physics.add.collider(shop, idleKnight);
+
+		sign = this.physics.add.image(630, 398, "sign").setScale(1.2);
+		sign.setImmovable(true);
+		sign.body.allowGravity = false;
+		lamp = this.physics.add.image(-200, 170, "lamp").setScale(2);
+		lamp.setImmovable(true);
+		lamp.body.allowGravity = false;
+		// fence = this.physics.add.image(-400, 479, "fence").setScale(2);
+		// fence.setImmovable(true);
+		// fence.body.allowGravity = false;
+
+		this.physics.add.collider(sign, lamp, idleKnight);
 
 		// **SCORE SET-UP**
 
-		scoreText = this.add.text(16, 16, "Food collected: 0", {
-			fontSize: "16px",
-			fill: "#FFF",
-		});
+		// scoreText = this.add.text(0, 0, "Food collected: 0", {
+		// 	fontSize: "16px",
+		// 	fill: "#FFF",
+		// });
+		//scoreText.fixedToCamera = true;
 
 		// **COLLIDERS**
 		this.physics.add.collider(idleKnight, platforms);
@@ -282,7 +388,6 @@ class Main extends Phaser.Scene {
 			key: "attack4",
 			frames: this.anims.generateFrameNumbers("attack4"),
 			frameRate: 8,
-			repeat: -1,
 		});
 		//damage
 		this.anims.create({
@@ -300,15 +405,24 @@ class Main extends Phaser.Scene {
 		});
 		//**ENEMY**
 		//idle
+		// this.anims.create({
+		// 	key: "dog-idle",
+		// 	frames: this.anims.generateFrameNumbers("dog-idle"),
+		// 	frameRate: 8,
+		// 	repeat: 0,
+		// });
+		//run
+		// this.anims.create({
+		// 	key: "dog-run",
+		// 	frames: this.anims.generateFrameNumbers("dog-run"),
+		// 	frameRate: 8,
+		// 	repeat: -1,
+		// });
+		// ***DECORATIONS**
+		//shop
 		this.anims.create({
-			key: "dog-idle",
-			frames: this.anims.generateFrameNumbers("dog-idle"),
-			frameRate: 8,
-			repeat: 0,
-		});
-		this.anims.create({
-			key: "dog-run",
-			frames: this.anims.generateFrameNumbers("dog-run"),
+			key: "shop",
+			frames: this.anims.generateFrameNumbers("shop"),
 			frameRate: 8,
 			repeat: -1,
 		});
@@ -316,10 +430,11 @@ class Main extends Phaser.Scene {
 
 	update(time, delta) {
 		const knightAnim = idleKnight.anims.getName();
-		const dogAnim = enemyDog.anims.getName();
+		//const dogAnim = enemyDog.anims.getName();
 		const knightFloor = idleKnight.body.onFloor();
 		const knightVel = idleKnight.body.velocityX;
 		const jumpVelocity = -235;
+		const scorePosition = 1540;
 		// functions
 		function move(character, direction) {
 			isRunning = true;
@@ -384,6 +499,13 @@ class Main extends Phaser.Scene {
 				//idleKnight.setVelocityX(knightVel / 2);
 			});
 		}
+
+		// background
+		this.forestBackground.tilePositionX = this.cameras.main.x;
+		//scoreText.x = this.cameras.worldView.x;
+
+		// shop
+		shop.anims.play("shop", true);
 
 		if ((cursor.up.isDown || cursor.W.isDown) && knightFloor) {
 			checkJump();
@@ -456,7 +578,7 @@ class Main extends Phaser.Scene {
 		// 	enemyDog.setVelocityX(0);
 		// 	enemyDog.anims.play("dog-idle", true);
 		// }
-		//console.log(enemyDog.x);
+		// console.log(enemyDog.x);
 		// if (!dogAnim) {
 		// 	enemyDog.flipX = true;
 		// 	enemyDog.anims.play("dog-idle", true);
@@ -466,7 +588,7 @@ class Main extends Phaser.Scene {
 		// }
 		// if (dogActive) {
 
-		//** ENEMY DOG */
+		// // ** ENEMY DOG */
 
 		// if (enemyDog.x >= 550) {
 		// 	//if (dogAnim !== "dog-idle") {
@@ -492,22 +614,8 @@ class Main extends Phaser.Scene {
 		// 	});
 		// 	//}
 		// }
-		//}
+		// }
 	}
 }
-function collectSushi(idleKnight, sushis) {
-	sushis.disableBody(true, true);
-	score += 1;
-	if (score === 2) {
-		// setTimeout(() => {
-		// 	this.scene.start("Level1");
-		// }, 4000);
-	}
-	return scoreText.setText("Food collected: " + score);
-}
-// moving onto next page?
-
-console.log("update", forestBackground);
-//forestBackground.tilePositionX += 1;
 
 export default Main;
